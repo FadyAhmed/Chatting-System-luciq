@@ -1,0 +1,97 @@
+version: '2.4'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: chat_sys
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql  # Optional: init scripts
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - app-network
+
+  ruby-app:
+    build:
+      context: ./core-microservice-Ruby
+      dockerfile: Dockerfile
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_VHOST: /
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "3000:3000"
+    networks:
+      - app-network
+  go-app:
+    build:
+      context: ./messaging-microservice-GO
+      dockerfile: Dockerfile
+    environment:
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      REDIS_URL: redis://redis:6379/0
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    ports:
+      - "8080:8080"
+    networks:
+      - app-network
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    healthcheck:
+      test: ["CMD", "rabbitmqctl", "status"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - app-network
+  redis:
+    image: "redis:7-alpine"
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - app-network
+      
+volumes:
+  rabbitmq_data:
+  redis-data:
+  mysql_data:
+    driver: local
+  bundle_cache:
+    driver: local
+
+networks:
+  app-network:
+    driver: bridge

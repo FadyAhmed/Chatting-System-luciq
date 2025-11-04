@@ -1,0 +1,32 @@
+default: &default
+  adapter: mysql2
+  username: root
+  password: root
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+  timeout: 5000
+
+development:
+  <<: *default
+  database: chat_sys
+
+test:
+  <<: *default
+  database: chat_sys
+
+
+production:
+  primary:
+    <<: *default
+    database: chat_sys
+  cache:
+    <<: *default
+    database: chat_sys
+    migrations_paths: db/cache_migrate
+  queue:
+    <<: *default
+    database: chat_sys
+    migrations_paths: db/queue_migrate
+  cable:
+    <<: *default
+    database: chat_sys
+    migrations_paths: db/cable_migrate
