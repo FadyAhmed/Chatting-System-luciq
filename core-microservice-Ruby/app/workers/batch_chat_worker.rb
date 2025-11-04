@@ -238,7 +238,7 @@ class BatchChatWorker
 end
 
 # Configuration constants
-RABBITMQ_HOST = ENV.fetch('RABBITMQ_HOST', 'localhost')
+RABBITMQ_HOST = ENV.fetch('RABBITMQ_HOST', 'rabbitmq')
 RABBITMQ_PORT = ENV.fetch('RABBITMQ_PORT', 5672).to_i
 RABBITMQ_QUEUE = 'chats-queue'
 REDIS_PORT = ENV.fetch('REDIS_PORT', '6379')

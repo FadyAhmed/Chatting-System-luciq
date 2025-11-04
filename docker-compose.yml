@@ -3,7 +3,7 @@ version: '2.4'
 services:
   mysql:
     image: mysql:8.0
-    container_name: mysql-db
+    container_name: mysql
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: chat_sys
@@ -18,7 +18,7 @@ services:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "root"]
       timeout: 10s
       retries: 10
-      start_period: 30s
+      start_period: 90s
     
   # ruby-app-worker:
   #   build:
@@ -30,18 +30,20 @@ services:
   #     RABBITMQ_USERNAME: guest
   #     RABBITMQ_PASSWORD: guest
   #     RABBITMQ_VHOST: /
-  #     MYSQL_PORT: 3307
+  #     MYSQL_PORT: 3306
   #     MYSQL_HOST: mysql
   #     REDIS_HOST: redis
   #     REDIS_PORT: 6379
-  #   command: bundle exec rake chat_worker:start
+  #   # command: bundle exec rake chat_worker:start && bundle exec rails db:migrate
   #   depends_on:
   #     mysql:
-  #       condition: service_healthy
+  #       condition: service_started
   #     rabbitmq:
   #       condition: service_healthy
   #     redis:
   #       condition: service_started
+  #   ports:
+  #     - "3000:3000"
 
   ruby-app:
     build:
@@ -53,14 +55,14 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       RABBITMQ_VHOST: /
-      MYSQL_PORT: 3307
+      MYSQL_PORT: 3306
       MYSQL_HOST: mysql
       REDIS_HOST: redis
       REDIS_PORT: 6379
     # command: bundle exec rake chat_worker:start && bundle exec rails db:migrate
     depends_on:
       mysql:
-        condition: service_healthy
+        condition: service_started
       rabbitmq:
         condition: service_healthy
       redis:

@@ -5,13 +5,15 @@ FROM ruby:3.2.5-slim
 # 2. System Dependencies and Build Tools
 # Install system libraries needed for common gems (mysql2, postgresql-client, etc.)
 # We install default-libmysqlclient-dev to build the mysql2 gem.
-RUN apt-get update -qq && \
+RUN rm -rf /var/lib/apt/lists/* && \
+    apt-get clean && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
-      build-essential \
-      default-libmysqlclient-dev \
-      nodejs \
-      yarn \
-      postgresql-client \
+    build-essential \
+    default-libmysqlclient-dev \
+    nodejs \
+    yarn \
+    default-mysql-server \
     && rm -rf /var/lib/apt/lists/*
 
 # 3. Environment Variables
@@ -38,8 +40,8 @@ COPY . .
 
 # 7. Entrypoint Script Setup
 # This script will run migrations and wait for the database at runtime
-COPY docker-entrypoint.sh /usr/bin/
-RUN chmod +x /usr/bin/docker-entrypoint.sh
+
+RUN chmod -R 777 docker-entrypoint.sh
 
 # 8. Permissions Fix (Crucial for development volumes)
 # Rails needs to write to log and tmp directories.
@@ -50,7 +52,7 @@ RUN chmod -R 777 log tmp
 EXPOSE 3000
 
 # Set the custom entrypoint script
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
 
 # Set the default command (will be run by the entrypoint script)
 CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]

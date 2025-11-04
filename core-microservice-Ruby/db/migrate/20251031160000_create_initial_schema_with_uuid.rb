@@ -1,4 +1,4 @@
-class CreateInitialSchemaWithUuid < ActiveRecord::Migration[8.1]
+class CreateInitialSchemaWithUuid < ActiveRecord::Migration[7.1]
   def change
     create_table :applications, id: false do |t|
       t.string :id, limit: 36, null: false, primary_key: true
