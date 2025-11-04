@@ -241,4 +241,6 @@ end
 RABBITMQ_HOST = ENV.fetch('RABBITMQ_HOST', 'localhost')
 RABBITMQ_PORT = ENV.fetch('RABBITMQ_PORT', 5672).to_i
 RABBITMQ_QUEUE = 'chats-queue'
-REDIS_URL = ENV.fetch('REDIS_URL', 'redis://localhost:6379/0')
+REDIS_PORT = ENV.fetch('REDIS_PORT', '6379')
+REDIS_HOST = ENV.fetch('REDIS_HOST', 'localhost')
+REDIS_URL = "redis://#{REDIS_HOST}:#{REDIS_PORT}/0"

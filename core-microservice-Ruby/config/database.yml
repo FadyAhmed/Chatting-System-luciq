@@ -1,7 +1,9 @@
 default: &default
   adapter: mysql2
+  host: <%= ENV.fetch('MYSQL_HOST', 'mysql') %>
   username: root
   password: root
+  port: <%= ENV.fetch('MYSQL_PORT', '3307') %>
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
 

@@ -7,20 +7,41 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: chat_sys
-      MYSQL_USER: root
       MYSQL_PASSWORD: root
+      # MYSQL_USER: root
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./mysql/init.sql:/docker-entrypoint-initdb.d/init.sql  # Optional: init scripts
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p$$MYSQL_ROOT_PASSWORD"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "root"]
       timeout: 10s
       retries: 10
       start_period: 30s
-    networks:
-      - app-network
+    
+  # ruby-app-worker:
+  #   build:
+  #     context: ./core-microservice-Ruby
+  #     dockerfile: Dockerfile
+  #   environment:
+  #     RABBITMQ_HOST: rabbitmq
+  #     RABBITMQ_PORT: 5672
+  #     RABBITMQ_USERNAME: guest
+  #     RABBITMQ_PASSWORD: guest
+  #     RABBITMQ_VHOST: /
+  #     MYSQL_PORT: 3307
+  #     MYSQL_HOST: mysql
+  #     REDIS_HOST: redis
+  #     REDIS_PORT: 6379
+  #   command: bundle exec rake chat_worker:start
+  #   depends_on:
+  #     mysql:
+  #       condition: service_healthy
+  #     rabbitmq:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_started
 
   ruby-app:
     build:
@@ -32,15 +53,21 @@ services:
       RABBITMQ_USERNAME: guest
       RABBITMQ_PASSWORD: guest
       RABBITMQ_VHOST: /
+      MYSQL_PORT: 3307
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    # command: bundle exec rake chat_worker:start && bundle exec rails db:migrate
     depends_on:
+      mysql:
+        condition: service_healthy
       rabbitmq:
         condition: service_healthy
       redis:
         condition: service_started
     ports:
       - "3000:3000"
-    networks:
-      - app-network
+    
   go-app:
     build:
       context: ./messaging-microservice-GO
@@ -55,8 +82,7 @@ services:
         condition: service_started
     ports:
       - "8080:8080"
-    networks:
-      - app-network
+    
   rabbitmq:
     image: rabbitmq:3.12-management
     healthcheck:
@@ -73,17 +99,15 @@ services:
       - "15672:15672"
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-    networks:
-      - app-network
+    
   redis:
     image: "redis:7-alpine"
     ports:
       - "6379:6379"
     volumes:
       - redis-data:/data
-    networks:
-      - app-network
-      
+    
+
 volumes:
   rabbitmq_data:
   redis-data:
@@ -91,7 +115,3 @@ volumes:
     driver: local
   bundle_cache:
     driver: local
-
-networks:
-  app-network:
-    driver: bridge

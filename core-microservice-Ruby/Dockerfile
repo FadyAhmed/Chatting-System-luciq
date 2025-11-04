@@ -1,83 +1,56 @@
-# syntax=docker/dockerfile:1
-# check=error=true
+# 1. Base Image
+# Using a slim image keeps the final size smaller
+FROM ruby:3.2.5-slim
 
-# This Dockerfile is designed for production, not development. Use with Kamal or build'n'run by hand:
-# docker build -t chat_sys .
-# docker run -d -p 80:80 -e RAILS_MASTER_KEY=<value from config/master.key> --name chat_sys chat_sys
+# 2. System Dependencies and Build Tools
+# Install system libraries needed for common gems (mysql2, postgresql-client, etc.)
+# We install default-libmysqlclient-dev to build the mysql2 gem.
+RUN apt-get update -qq && \
+    apt-get install -y --no-install-recommends \
+      build-essential \
+      default-libmysqlclient-dev \
+      nodejs \
+      yarn \
+      postgresql-client \
+    && rm -rf /var/lib/apt/lists/*
 
-# For a containerized dev environment, see Dev Containers: https://guides.rubyonrails.org/getting_started_with_devcontainer.html
+# 3. Environment Variables
+# These settings define the environment for the app and Bundler
+ENV RAILS_ENV="development" \
+    BUNDLE_PATH="/usr/local/bundle" \
+    # We want development gems, so we only exclude production
+    BUNDLE_WITHOUT="production" \
+    TZ="Etc/UTC"
 
-# Make sure RUBY_VERSION matches the Ruby version in .ruby-version
-ARG RUBY_VERSION=3.4.7
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
-
-# Rails app lives here
+# 4. Working Directory and Code Copying
 WORKDIR /rails
 
-# Install base packages
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 libvips sqlite3 && \
-    ln -s /usr/lib/$(uname -m)-linux-gnu/libjemalloc.so.2 /usr/local/lib/libjemalloc.so && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
+# Use two stages to leverage Docker layer caching
+# Copy Gemfile/Lockfile first
+COPY Gemfile Gemfile.lock ./
 
-# Set production environment variables and enable jemalloc for reduced memory usage and latency.
-ENV RAILS_ENV="production" \
-    BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development" \
-    LD_PRELOAD="/usr/local/lib/libjemalloc.so"
+# 5. Install Dependencies
+# This runs after system dependencies are installed and uses the development settings
+RUN bundle install
 
-# Throw-away build stage to reduce size of final image
-FROM base AS build
-
-# Install packages needed to build gems
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-# Install application gems
-COPY Gemfile Gemfile.lock vendor ./
-
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
-    bundle exec bootsnap precompile -j 1 --gemfile
-
-# Copy application code
+# 6. Copy the rest of the application code
 COPY . .
 
-# Precompile bootsnap code for faster boot times.
-# -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
-RUN bundle exec bootsnap precompile -j 1 app/ lib/
+# 7. Entrypoint Script Setup
+# This script will run migrations and wait for the database at runtime
+COPY docker-entrypoint.sh /usr/bin/
+RUN chmod +x /usr/bin/docker-entrypoint.sh
 
-# Adjust binfiles to be executable on Linux
-RUN chmod +x bin/* && \
-    sed -i "s/\r$//g" bin/* && \
-    sed -i 's/ruby\.exe$/ruby/' bin/*
+# 8. Permissions Fix (Crucial for development volumes)
+# Rails needs to write to log and tmp directories.
+# We set permissions broadly to avoid UID/GID conflicts with the host machine.
+RUN chmod -R 777 log tmp
 
-# Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# 9. Final Configuration
+EXPOSE 3000
 
+# Set the custom entrypoint script
+ENTRYPOINT ["docker-entrypoint.sh"]
 
-
-
-# Final stage for app image
-FROM base
-
-# Run and own only the runtime files as a non-root user for security
-RUN groupadd --system --gid 1000 rails && \
-    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash
-USER 1000:1000
-
-# Copy built artifacts: gems, application
-COPY --chown=rails:rails --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
-COPY --chown=rails:rails --from=build /rails /rails
-
-# Entrypoint prepares the database.
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
-
-# Start server via Thruster by default, this can be overwritten at runtime
-EXPOSE 80
-
-CMD ["sh", "-c", "rails db:migrate && bundle exec rake chat_worker:start && rails server -b 0.0.0.0"]
-# CMD ["./bin/thrust", "./bin/rails", "server"]
+# Set the default command (will be run by the entrypoint script)
+CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
