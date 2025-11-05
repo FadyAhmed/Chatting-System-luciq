@@ -7,32 +7,35 @@ docker-compose build --no-cache && docker-compose up -d
 ---
 ## Chat Server Architecture Documentation
 High-Level Architectural Overview
-I. Implemented Core Functionality
-Core Messaging Logic: The fundamental logic for real-time messaging is complete and operational, supporting both direct user-to-user communication and group chat functionality.
+Architectural Summary: Key Project Points
 
-Concurrency Management: The system efficiently handles concurrent operations through Go's native goroutines and synchronized data structures, ensuring high-performance message delivery.
+This document summarizes the current architecture, established workflow, and strategic roadmap for the real-time messaging platform.
 
-Race Condition Mitigation: Comprehensive mutex protection and atomic operations prevent data inconsistencies across shared resources including user connections and session management.
+I. Core Architecture & Established Strengths
 
-II. Technology Stack Rationale
-Concurrency Handling: Go was strategically selected for its exceptional capability in managing massive numbers of concurrent WebSocket connections, leveraging lightweight goroutines and efficient I/O multiplexing.
+High Concurrency & Efficiency: The core messaging logic is implemented in Go, specifically chosen for its efficient handling of a large volume of concurrent WebSocket connections via goroutines.
 
-Data Integrity and State Management: Ruby serves as the foundation for all database migrations and primary APIs, functioning as the Single Point of Truth (SPOT) for application state and maintaining strict transactional integrity.
+Data Integrity & Persistence (Single Point of Trust): Ruby-based APIs and migrations manage the primary database, ensuring transactional integrity and making the Ruby application the sole trusted authority for data changes.
 
-Performance and Consistency: The architecture eliminates direct, redundant database hits and prevents potential race conditions through Message Queues (MQ). Consumers systematically process messages in controlled batches, updating the database in synchronized chunks to ensure data consistency.
+Race Condition Mitigation: All critical database updates (such as subscription changes or message history) are processed through Message Queues (MQ). This pattern buffers updates and performs synchronized database writes in chunks, preventing direct redundant database hits and mitigating race conditions.
 
-III. Current Operational Workflow (Sequential Process)
-Application Provisioning: Create a new application instance and receive its unique authentication token for API interactions.
+Optimized Indexing (Redis): Redis is utilized for high-speed indexing, maintaining both the standard index (User to Chats) and the inverse index (Chat to Subscribers) to ensure fast lookup and message distribution.
 
-Application Definition: Define the new application with descriptive metadata including title, description, and configuration parameters.
+II. Current Operational Workflow
 
-Chat Instantiation: Initialize a new chat conversation within the specified application context, generating unique chat identifiers.
+The platform follows a structured, multi-step process for initial setup and messaging:
 
-Subscription Management: Establish subscriptions to link users to specific chats, enabling multi-user participation and permission-based access control.
+Application Creation: A new application is created via the main API, generating a unique application token for security and authorization.
 
-Message Delivery: Transmit messages with targeted subscriber arrays, ensuring every designated recipient receives the message via their active WebSocket connection with real-time delivery confirmation.
+Chat Creation: A new chat instance is explicitly created within the scope of the application.
 
-IV. Strategic Enhancements and Development Roadmap
+Subscription: Users are subscribed to a specific chat, enabling multi-user communication.
+
+Initial Message Handshake: Messages are sent to the platform, including an array of current subscribers.
+
+Real-Time Delivery: The Go WebSocket handlers distribute the message in real-time to all clients listed in the message's subscriber array.
+
+III. Strategic Enhancements and Development Roadmap
 Search Functionality: Integrate ElasticSearch to implement robust, full-text search API for messages and comprehensive user history retrieval. (Planned)
 
 Authentication Service: Develop dedicated Authentication microservice to handle user identity management, OAuth flows, and granular authorization controls. (In Progress)
