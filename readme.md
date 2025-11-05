@@ -1,4 +1,8 @@
-Chat Server Architecture Documentation
+# After Cloning the application run The Application
+```bash
+docker-compose build --no-cache && docker-compose up -d
+---
+## Chat Server Architecture Documentation
 High-Level Architectural Overview
 I. Implemented Core Functionality
 Core Messaging Logic: The fundamental logic for real-time messaging is complete and operational, supporting both direct user-to-user communication and group chat functionality.
@@ -26,10 +30,14 @@ Subscription Management: Establish subscriptions to link users to specific chats
 Message Delivery: Transmit messages with targeted subscriber arrays, ensuring every designated recipient receives the message via their active WebSocket connection with real-time delivery confirmation.
 
 IV. Strategic Enhancements and Development Roadmap
-Enhancement	Description	Status
-Search Functionality	Integrate ElasticSearch to implement robust, full-text search API for messages and comprehensive user history retrieval.	Planned
-Authentication Service	Develop dedicated Authentication microservice to handle user identity management, OAuth flows, and granular authorization controls.	In Progress
-Implicit Chat Creation	Streamline chat instantiation: users can send messages with new chat IDs, triggering automatic implicit chat record creation in database.	Implemented
-History Retrieval	Implement functionality to fetch complete chat history for users who were offline during original message delivery, ensuring message persistence.	Planned
-Read Performance Caching	Utilize Redis to cache recent messages for every chat participant, accelerating history lookups and significantly reducing database load.	In Progress
-Code Structure Optimization	Implement comprehensive enhancements to code structure, modularity, and separation of concerns for improved long-term maintainability and scalability.	Ongoing
+Search Functionality: Integrate ElasticSearch to implement robust, full-text search API for messages and comprehensive user history retrieval. (Planned)
+
+Authentication Service: Develop dedicated Authentication microservice to handle user identity management, OAuth flows, and granular authorization controls. (In Progress)
+
+Implicit Chat Creation: Streamline chat instantiation: users can send messages with new chat IDs, triggering automatic implicit chat record creation in database. (Implemented)
+
+History Retrieval: Implement functionality to fetch complete chat history for users who were offline during original message delivery, ensuring message persistence. (Planned)
+
+Read Performance Caching: Utilize Redis to cache recent messages for every chat participant, accelerating history lookups and significantly reducing database load. (In Progress)
+
+Code Structure Optimization: Implement comprehensive enhancements to code structure, modularity, and separation of concerns for improved long-term maintainability and scalability. (Ongoing)
