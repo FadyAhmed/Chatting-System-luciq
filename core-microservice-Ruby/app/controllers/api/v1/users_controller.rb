@@ -6,12 +6,9 @@ module Api
     class UsersController < ApplicationController
 
       def authenticate
-        # 1. Find the user by email
         user = User.find_by(email: params[:email].downcase)
 
-        # 2. Check password using Rails' has_secure_password
         if user && user.authenticate(params[:password])
-          # 3. If authenticated, generate a JWT
           token = encode_token(user_id: user.id, email: user.email)
           
           render json: { 
@@ -33,7 +30,6 @@ module Api
         if user.save
           redis = connect_redis
           redis.sadd('registered:users', user.id)
-          # Optionally log the user in immediately after creation
           token = encode_token(user_id: user.id, email: user.email)
           
           render json: { 
@@ -52,17 +48,11 @@ module Api
 
       private
 
-      # Strong Parameters for mass assignment protection
       def user_params
-        # Allows name, email, password, and password_confirmation
         params.require(:user).permit(:name, :email, :password, :password_confirmation)
       end
 
-      # JWT Encoding helper method
-      # You will need to install the 'jwt' gem for this to work
-      # e.g., gem 'jwt' in your Gemfile
       def encode_token(payload)
-        # Define your SECRET_KEY in an environment variable (e.g., Rails credentials)
         secret = Rails.application.credentials.jwt_secret 
         JWT.encode(payload, secret)
       end
@@ -70,7 +60,9 @@ module Api
       private
 
       def connect_redis
-        Redis.new(host: '127.0.0.1', port: 6379)
+        host = ENV.fetch('REDIS_HOST', 'localhost')
+        port = ENV.fetch('REDIS_PORT', 6379).to_i
+        Redis.new(host: host, port: port)
       rescue StandardError => e
         Rails.logger.error("Failed to connect to Redis: #{e.message}")
         nil 

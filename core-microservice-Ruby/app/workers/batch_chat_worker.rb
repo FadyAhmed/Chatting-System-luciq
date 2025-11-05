@@ -171,8 +171,7 @@ class BatchChatWorker
     begin
       ActiveRecord::Base.transaction do
         # Use Redis for atomic increments
-        redis = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://localhost:6379/0'))
-        @logger.info "Hii"
+        redis = Redis.new(url: ENV.fetch('REDIS_URL', 'redis://redis:6379/0'))
 
         chat_ids = message_data_batch.map { |msg| msg['chat_id'] }.uniq
         
@@ -238,7 +237,7 @@ class BatchChatWorker
 end
 
 # Configuration constants
-RABBITMQ_HOST = ENV.fetch('RABBITMQ_HOST', 'rabbitmq')
+RABBITMQ_HOST = ENV.fetch('RABBITMQ_HOST', 'localhost')
 RABBITMQ_PORT = ENV.fetch('RABBITMQ_PORT', 5672).to_i
 RABBITMQ_QUEUE = 'chats-queue'
 REDIS_PORT = ENV.fetch('REDIS_PORT', '6379')

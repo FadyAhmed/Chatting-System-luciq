@@ -20,30 +20,25 @@ services:
       retries: 10
       start_period: 90s
     
-  # ruby-app-worker:
-  #   build:
-  #     context: ./core-microservice-Ruby
-  #     dockerfile: Dockerfile
-  #   environment:
-  #     RABBITMQ_HOST: rabbitmq
-  #     RABBITMQ_PORT: 5672
-  #     RABBITMQ_USERNAME: guest
-  #     RABBITMQ_PASSWORD: guest
-  #     RABBITMQ_VHOST: /
-  #     MYSQL_PORT: 3306
-  #     MYSQL_HOST: mysql
-  #     REDIS_HOST: redis
-  #     REDIS_PORT: 6379
-  #   # command: bundle exec rake chat_worker:start && bundle exec rails db:migrate
-  #   depends_on:
-  #     mysql:
-  #       condition: service_started
-  #     rabbitmq:
-  #       condition: service_healthy
-  #     redis:
-  #       condition: service_started
-  #   ports:
-  #     - "3000:3000"
+  ruby-app-worker:
+    build:
+      context: ./core-microservice-Ruby
+      dockerfile: Dockerfile.worker
+    environment:
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: guest
+      RABBITMQ_PASSWORD: guest
+      RABBITMQ_VHOST: /
+      MYSQL_PORT: 3306
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   ruby-app:
     build:
@@ -59,7 +54,6 @@ services:
       MYSQL_HOST: mysql
       REDIS_HOST: redis
       REDIS_PORT: 6379
-    # command: bundle exec rake chat_worker:start && bundle exec rails db:migrate
     depends_on:
       mysql:
         condition: service_started
@@ -96,6 +90,7 @@ services:
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
+    
     ports:
       - "5672:5672"
       - "15672:15672"

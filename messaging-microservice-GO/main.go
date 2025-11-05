@@ -179,14 +179,14 @@ func ConnectMQ(cfg MQConfig) (MQClient, error) {
 }
 
 func NewServer() *Server {
-	// 1. Read RabbitMQ URL from ENV or use default
 	mqURL := os.Getenv("RABBITMQ_URL")
 	if mqURL == "" {
 		fmt.Printf("INFO: RABBITMQ_URL not set. Using default: %s\n", mqURL)
 	}
 
 	mqConfig := MQConfig{
-		URL: mqURL,
+		URL:       mqURL,
+		QueueName: "chats-queue",
 	}
 
 	mqClient, err := ConnectMQ(mqConfig)
@@ -194,7 +194,6 @@ func NewServer() *Server {
 		panic(fmt.Sprintf("Failed to connect to RabbitMQ at %s: %v", mqURL, err))
 	}
 
-	// 2. Read Redis URL from ENV or use default
 	redisURL := os.Getenv("REDIS_URL")
 	if redisURL == "" {
 		fmt.Printf("INFO: REDIS_URL not set. Using default: %s\n", redisURL)
@@ -261,8 +260,8 @@ func (s *Server) PublishToMQ(message []byte) error {
 	return s.mqClient.Publish(
 		"",
 		s.mqConfig.QueueName,
-		false, // mandatory
-		false, // immediate
+		false,
+		false,
 		message,
 	)
 }
@@ -353,7 +352,7 @@ func (s *Server) readLoop(ws *websocket.Conn, senderID string) {
 			keyPrefix := "user:subscriptions:"
 
 			subscribers := make(map[string]struct{})
-			subscribers[senderID] = struct{}{} // Add sender
+			subscribers[senderID] = struct{}{}
 
 			for _, userID := range incomingMsg.Subscribers {
 				subscribers[userID] = struct{}{}

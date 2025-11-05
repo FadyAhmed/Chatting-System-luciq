@@ -63,10 +63,8 @@ module Api
       # POST /applications/:application_token/chats
       def create
         begin
-          # Extract user_id from message body
           user_id = chat_params[:user_id]
           
-          # Validate that user_id is provided
           if user_id.blank?
             render json: {
               status: "Bad Request",
@@ -75,7 +73,6 @@ module Api
             return
           end
 
-          # Verify the user exists
           user = User.find_by(id: user_id)
           if user.nil?
             render json: {
@@ -85,21 +82,18 @@ module Api
             return
           end
 
-          # Generate UUID for the chat
           chat_id = SecureRandom.uuid
           Rails.logger.info "Generated UUID: #{chat_id}"
 
-          # Generate the next chat number for this application
           next_chat_number = @application.chats.maximum(:number).to_i + 1
           
           chat = @application.chats.new(
-            user_id: user_id, # Set from message body
+            user_id: user_id,
             number: next_chat_number,
             messages_count: 0
           )
 
           if chat.save
-            # Update application's chats_count
             @application.increment!(:chats_count)
             
             render json: {
@@ -130,10 +124,8 @@ module Api
       # PATCH/PUT /applications/:application_token/chats/:id
       def update
         begin
-          # Extract user_id from message body for ownership verification
           user_id = chat_params[:user_id]
           
-          # Check if the user_id in the request body owns this chat
           if @chat.user_id != user_id
             render json: {
               status: "Forbidden",

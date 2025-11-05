@@ -24,12 +24,4 @@ RUN bundle install
 
 COPY . .
 
-RUN chmod -R 777 docker-entrypoint.sh
-
-RUN chmod -R 777 log tmp
-
-EXPOSE 3000
-
-ENTRYPOINT ["./docker-entrypoint.sh"]
-
-CMD ["bundle", "exec", "rails", "server", "-b", "0.0.0.0"]
+CMD ["bundle", "exec", "rake", "chat_worker:start"]
