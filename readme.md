@@ -1,6 +1,7 @@
 # After Cloning the application run The Application
 ```bash
 docker-compose build --no-cache && docker-compose up -d
+```
 ---
 ## Chat Server Architecture Documentation
 High-Level Architectural Overview
