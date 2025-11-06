@@ -1,4 +1,4 @@
-##Chatting App
+## Chatting App
 
 # After Cloning the application run The Application
 ```bash
