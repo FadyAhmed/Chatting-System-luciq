@@ -4,7 +4,8 @@ docker-compose up --build -d
 ```
 ---
 ## Application Flow:
-```sequenceDiagram
+```mermaid
+sequenceDiagram
     participant U as User (Ruby)
     participant R as Ruby Server
     participant G as Go Server (WebSocket)
@@ -36,6 +37,7 @@ docker-compose up --build -d
     W->>MQ: 11. Read message from queue (Async)
     W->>DB: 12. Write message to Database (Persistence)
     DB-->>W: Acknowledge write (History available)
+```
 
 ---
 ## Chat Server Architecture Documentation
