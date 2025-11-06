@@ -1,5 +1,3 @@
-## Chatting App
-
 # After Cloning the application run The Application
 ```bash
 docker-compose up --build -d
