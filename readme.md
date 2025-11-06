@@ -35,7 +35,7 @@ docker-compose up --build -d
     %% --- Asynchronous Persistence ---
     W->>MQ: 11. Read message from queue (Async)
     W->>DB: 12. Write message to Database (Persistence)
-    DB-->>W: Acknowledge write (History available) ```</pre>
+    DB-->>W: Acknowledge write (History available) </pre>
 ---
 ---
 ## Chat Server Architecture Documentation
