@@ -6,7 +6,7 @@ docker-compose up --build -d
 ## Application Flow:
 ```mermaid
 sequenceDiagram
-    participant U as User (Ruby)
+    participant U as User
     participant R as Ruby Server
     participant G as Go Server (WebSocket)
     participant MQ as Message Queue
