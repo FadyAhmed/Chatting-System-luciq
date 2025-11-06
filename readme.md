@@ -3,6 +3,43 @@
 docker-compose up --build -d
 ```
 ---
+## Application Flow:
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant R as Ruby Server
+    participant G as Go Server (WebSocket)
+    participant MQ as Message Queue
+    participant W as Ruby Worker
+    participant DB as Database
+    participant Redis as Redis (Chat Subs)
+
+    %% --- User Profile/Application/Chat Creation (CRUD Operations) ---
+    U->>R: 1. Create Profile/App/Chat (HTTP/API)
+    R->>DB: 2. Persist record & get ID
+    DB-->>R: Respond with ID
+    R-->>U: 3. Respond with Chat ID
+
+    %% --- Subscription (Real-time Connection Setup) ---
+    U->>G: 4. Subscribe to chat (WebSocket Connect/Event)
+    G->>Redis: 5. Store/Update active subscription mapping (Conn ID -> Chat ID)
+    Redis-->>G: Acknowledgment
+    G-->>U: 6. Acknowledge subscription (Connection Established)
+
+    %% --- Sending a Message ---
+    U->>G: 7. Send message (over WebSocket)
+    G->>Redis: 8. Get active connections for Chat ID
+    Redis-->>G: List of Connection IDs
+    G->>U: 9. Send message to currently connected receivers (Real-time Fan-out)
+    G->>MQ: 10. Enqueue message data (for persistence & history)
+
+    %% --- Asynchronous Persistence ---
+    W->>MQ: 11. Read message from queue (Async)
+    W->>DB: 12. Write message to Database (Persistence)
+    DB-->>W: Acknowledge write (History available)
+```
+
+---
 ## Chat Server Architecture Documentation
 High-Level Architectural Overview
 Architectural Summary: Key Project Points
