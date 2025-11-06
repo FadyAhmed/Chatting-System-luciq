@@ -36,7 +36,7 @@ docker-compose up --build -d
     W->>MQ: 11. Read message from queue (Async)
     W->>DB: 12. Write message to Database (Persistence)
     DB-->>W: Acknowledge write (History available)
-```
+
 ---
 ## Chat Server Architecture Documentation
 High-Level Architectural Overview
